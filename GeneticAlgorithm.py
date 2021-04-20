@@ -8,12 +8,17 @@ import random
 import math
 import numpy as np
 from numpy.random import choice
+from decimal import *
 
 
 class FitnessIdx:
     def __init__(self, idx, fitness):
         self.idx = idx
         self.fitness = fitness
+        self.prob = 0
+        
+    def setProbablity(self, probablity):
+        self.prob = probablity
         
 
 # Verilen vektorun unit vector halini verir.
@@ -123,17 +128,44 @@ def getFitnessScore(route, finalPoint, endPoint):
 def takeFitnessScore(elem):
     return elem.fitness
 
-# Verilen populasyon icerisinden rastgele secim yapar. 
+# Verilen parentların genlerinden rastgele secilen bir yerden cross over islemi yapilir ve sonuclardan biri rastgele olarak dondurulur.
+def applyCrossOver(parentX, parentY):
+    kromLen = len(parentX)
+    crossPoint = random.randint(0,kromLen)
+    print("Cross point : ", crossPoint)
+    #parenX de 0 dan secilen noktaya kadar olan kisim parentY'ye
+    
+    
+    tmp = parentX.copy()
+    
+    for i in range(crossPoint):
+        parentX[i] = parentY[i]
+        parentY[i] = tmp[i]
+    
+    
+    if(crossPoint % 2 == 0):
+        return parentX
+    else:
+        return parentY
+    
+# Populasyondaki kromozomlarin secim ihtimallerinin atamasini yapar.        
+def setPopulationProbablities(population):
+    totalProbablity = len(population) * len(population) / 2
+    for i,krom in enumerate(population):
+        krom.setProbablity((len(population) - i) / (totalProbablity))
+    
+
+# Verilen populasyon icerisinden secilme olasiliklarina gore rastgele secim yapar. 
 # Alinan parametrede class listesi vardır. Elemanlarin fitness degerleri bu parametre icerisinde bulunmaktadir.
 def randomSelection(population):
     probablities = []
     for i in range(len(population)):
-        probablities.append(1 / population[i].fitness) # fitness ı az olanın ihtimali cok olmasi gerek.
+        probablities.append(population[i].prob) # fitness degeri az olanın ihtimali cok olmasi gerek.
     
-    selection = choice(population, 1, p=probablities)
-    
+    selection = random.choices(population, probablities,k=1)
     # Secilen degerin hangi indisde bulundugu bilgisi dondurulur.
-    return selection.idx
+    print("Selected fitness : ", selection[0].fitness)
+    return selection[0].idx
 
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
@@ -151,30 +183,24 @@ if __name__ == '__main__':
         fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], routes[i][-1], endPoint)))
     
     
-    print("Fitness : ", fitnessVals[0].fitness)
-    sortedFitness = fitnessVals.sort(key=takeFitnessScore)
+    #print("Fitness : ", fitnessVals[0].fitness)
+    fitnessVals.sort(key=takeFitnessScore)
     
-    print("Sorted List : ", fitnessVals[0].fitness , "  -  ", fitnessVals[0].idx)
-    print("en iyi : " , population[fitnessVals[0].idx])
-    print("en kotu : " , population[fitnessVals[-1].idx])
+    # Yapilan siralamaya gore populasyondaki kromozomlarin secilme olasiliklarini atar.
+    setPopulationProbablities(fitnessVals)
     
+    parentX_Idx = randomSelection(fitnessVals)
+    parentY_Idx = randomSelection(fitnessVals)
     
+    parentX_kromozom = population[parentX_Idx]
+    parentY_kromozom = population[parentY_Idx]
     
+    # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
+    child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
     
-    
-    x = createSeed(10)
-    route = seedToCoordinate(x, (0,0)) 
-    
-    
-    
-    diffPointCount = getDifferentPointsCountInTheField_Fitness(route)
-    print("Different point count in the route : ", diffPointCount)    
-    
-    angleRes = getTurningAnglesInRoute_Fitness(route)
-    print("Angle addition res : ", angleRes)
-    
-    finalDist = getFinalDistancesFromEndPoint_Fitness((8,9),(0,0))
-    print("Final distance val : ", finalDist)
+    print("Parent X : ", parentX_kromozom)
+    print("Parent Y : ", parentY_kromozom)
+    print("Child : ", child)
     
     
     
