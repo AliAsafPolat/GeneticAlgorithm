@@ -132,7 +132,7 @@ def takeFitnessScore(elem):
 def applyCrossOver(parentX, parentY):
     kromLen = len(parentX)
     crossPoint = random.randint(0,kromLen)
-    print("Cross point : ", crossPoint)
+    #print("Cross point : ", crossPoint)
     #parenX de 0 dan secilen noktaya kadar olan kisim parentY'ye
     
     
@@ -164,13 +164,24 @@ def randomSelection(population):
     
     selection = random.choices(population, probablities,k=1)
     # Secilen degerin hangi indisde bulundugu bilgisi dondurulur.
-    print("Selected fitness : ", selection[0].fitness)
+    #print("Selected fitness : ", selection[0].fitness)
     return selection[0].idx
+
+
+def applyMutationProbablity(kromozom, mutationProbablity):
+    
+    for i in range(len(kromozom)):
+        prob = random.uniform(0.0, 1.0)
+        #print(prob)
+        if(prob < mutationProbablity):
+            kromozom[i] = random.randint(1,8)
+        
 
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
     
-    populationCount = 100
+    populationCount = 1000
+    mutationProbablity = 0.1
     startingPoint = endPoint = (0,0)
     population = []
     routes = []
@@ -178,29 +189,54 @@ if __name__ == '__main__':
     
     # Ilk populasyon olusturulur.
     for i in range(populationCount):
-        population.append(createSeed(10))
-        routes.append(seedToCoordinate(population[i], (0,0)))
+        population.append(createSeed(80))
+        routes.append(seedToCoordinate(population[i], startingPoint))
         fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], routes[i][-1], endPoint)))
-    
     
     #print("Fitness : ", fitnessVals[0].fitness)
     fitnessVals.sort(key=takeFitnessScore)
-    
+            
     # Yapilan siralamaya gore populasyondaki kromozomlarin secilme olasiliklarini atar.
     setPopulationProbablities(fitnessVals)
     
-    parentX_Idx = randomSelection(fitnessVals)
-    parentY_Idx = randomSelection(fitnessVals)
+    endCondition = True
     
-    parentX_kromozom = population[parentX_Idx]
-    parentY_kromozom = population[parentY_Idx]
+    while endCondition:
+        newPopulation = []
+        newFitnessVals = []
+        newRoutes = []
+        for i in range(populationCount):
+            parentX_Idx = randomSelection(fitnessVals)
+            parentY_Idx = randomSelection(fitnessVals)
+            
+            parentX_kromozom = population[parentX_Idx]
+            parentY_kromozom = population[parentY_Idx]
+            
+            # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
+            child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
+            # Mutasyon ihtimalini ekler.
+            applyMutationProbablity(child, mutationProbablity)        
+            
+            newPopulation.append(child)
+            newRoutes.append(seedToCoordinate(child, startingPoint))
+            newFitnessVals.append( FitnessIdx(i, getFitnessScore(newRoutes[i], newRoutes[i][-1], endPoint)))
     
-    # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
-    child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
-    
-    print("Parent X : ", parentX_kromozom)
-    print("Parent Y : ", parentY_kromozom)
-    print("Child : ", child)
+            
+            
+        population = newPopulation
+        routes = newRoutes
+        fitnessVals = newFitnessVals
+        fitnessVals.sort(key = takeFitnessScore)
+        print("Fitness val : ", fitnessVals[0].fitness)
+            
+        if(fitnessVals[0].fitness < 1.5):
+            endCondition = False
+            print("Final fitness : ", fitnessVals[0].fitness)
+            print("Final path : ", population[fitnessVals[0].idx])
+        
+    #print("Parent X : ", parentX_kromozom)
+    #print("Parent Y : ", parentY_kromozom)
+    #print("Child : ", child)
     
     
     
