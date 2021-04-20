@@ -7,6 +7,14 @@ Created on Sun Apr 18 11:36:16 2021
 import random
 import math
 import numpy as np
+from numpy.random import choice
+
+
+class FitnessIdx:
+    def __init__(self, idx, fitness):
+        self.idx = idx
+        self.fitness = fitness
+        
 
 # Verilen vektorun unit vector halini verir.
 def unitVector(vector):
@@ -16,7 +24,8 @@ def unitVector(vector):
 def getAngleBetweenVectors(v1, v2):
     v1_u = unitVector(v1)
     v2_u = unitVector(v2)
-    return math.degrees(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))) % 360
+    # Sonucun normalize edilmis halini dondurur.
+    return (math.degrees(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))) % 360) / 360
 
 # Verilen iki noktadan cizilen vektoru verir.
 def getVector(x1, y1, x2, y2):
@@ -69,51 +78,103 @@ def isInTheField(point, fieldWidth, fieldHeight, fieldStartingX, fieldStartingY)
     else:
         return True
 
+# Dronelarin ne kadar adimlik gezinimler yapacagi bilgisini dondurur.
+def getPathLengthPerDrone(droneCount, width, height):
+    fieldCount = width * height
+    return math.ceil((fieldCount - 1) / droneCount)    
+
 # Olusturulan rotadaki koordinatlarin alan icerisinde olup ve birbirlerinden farkli olma sayisi 
-def getDifferentPointsCountInTheField(route):
+def getDifferentPointsCountInTheField_Fitness(route):
     count = 0
     marked = []
     for point in route:
         if(marked.count(point)<1 and isInTheField(point,9,9,0,0)):
             count += 1
             marked.append(point)
-    return count
+    # Max fonksiyonu min fonksiyonuna cevirildi.
+    return 1/count
 
 # Bitis noktasi ile hedef nokta arasindaki Manhattan Distance bilgisini verir.
-def getFinalDistancesFromEndPoint(finalPoint, endPoint):
-    return abs(finalPoint[0] - endPoint[0]) + abs(finalPoint[1] - endPoint[1])
+def getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint):
+    # Normalize edilmis sonuc doner.
+    return (abs(finalPoint[0] - endPoint[0]) + abs(finalPoint[1] - endPoint[1])) / 10
 
 # Verilen rotada olusturulan acilarin toplamini verir.
-def getTurningAnglesInRoute(route):
+def getTurningAnglesInRoute_Fitness(route):
     angleRes = 0
     v0 = getVector(route[0][0],route[0][1],route[1][0],route[1][1])
     
     for i in range(2,len(route)):
         v1 = getVector(route[i-1][0],route[i-1][1], route[i][0], route[i][1])
         angle_ = getAngleBetweenVectors(v0,v1)
-        print("Turning Angle ", i , " : ", angle_)
+        #print("Turning Angle ", i , " : ", angle_)
         angleRes += angle_
         v0 = v1
     return angleRes
 
+# Fitness fonksiyonlari toplanarak genel fitness sonucu dondurulur.
+def getFitnessScore(route, finalPoint, endPoint):
+    fitDiffPoint = getDifferentPointsCountInTheField_Fitness(route)
+    fitFinalDist = getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint)
+    fitTurningAng = getTurningAnglesInRoute_Fitness(route)
+    return fitDiffPoint + fitFinalDist+ fitTurningAng
+
+# Verilen class edemanin uygun degeri bilgisi geri dondurulur.
+def takeFitnessScore(elem):
+    return elem.fitness
+
+# Verilen populasyon icerisinden rastgele secim yapar. 
+# Alinan parametrede class listesi vardır. Elemanlarin fitness degerleri bu parametre icerisinde bulunmaktadir.
+def randomSelection(population):
+    probablities = []
+    for i in range(len(population)):
+        probablities.append(1 / population[i].fitness) # fitness ı az olanın ihtimali cok olmasi gerek.
+    
+    selection = choice(population, 1, p=probablities)
+    
+    # Secilen degerin hangi indisde bulundugu bilgisi dondurulur.
+    return selection.idx
+
 if __name__ == '__main__':
+    #droneCount = input("Enter Drone Count : ")
+    
+    populationCount = 100
+    startingPoint = endPoint = (0,0)
+    population = []
+    routes = []
+    fitnessVals = []
+    
+    # Ilk populasyon olusturulur.
+    for i in range(populationCount):
+        population.append(createSeed(10))
+        routes.append(seedToCoordinate(population[i], (0,0)))
+        fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], routes[i][-1], endPoint)))
+    
+    
+    print("Fitness : ", fitnessVals[0].fitness)
+    sortedFitness = fitnessVals.sort(key=takeFitnessScore)
+    
+    print("Sorted List : ", fitnessVals[0].fitness , "  -  ", fitnessVals[0].idx)
+    print("en iyi : " , population[fitnessVals[0].idx])
+    print("en kotu : " , population[fitnessVals[-1].idx])
+    
+    
+    
+    
+    
     x = createSeed(10)
-    
-    v1 = getVector(0,0,1,1)
-    v2 = getVector(1,1,0,1)
-    aci = getAngleBetweenVectors(v1,v2)    
-    print(x)
-    
-    #print(aci)
-    
     route = seedToCoordinate(x, (0,0)) 
-    for r in route:
-        print(r)
     
-    diffPointCount = getDifferentPointsCountInTheField(route)
+    
+    
+    diffPointCount = getDifferentPointsCountInTheField_Fitness(route)
     print("Different point count in the route : ", diffPointCount)    
     
-    angleRes = getTurningAnglesInRoute(route)
+    angleRes = getTurningAnglesInRoute_Fitness(route)
     print("Angle addition res : ", angleRes)
+    
+    finalDist = getFinalDistancesFromEndPoint_Fitness((8,9),(0,0))
+    print("Final distance val : ", finalDist)
+    
     
     
