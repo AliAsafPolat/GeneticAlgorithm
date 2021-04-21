@@ -38,7 +38,7 @@ def getVector(x1, y1, x2, y2):
     dY = y2 - y1
     return (dX, dY)
 
-# 9x9 luk alanda rastgele (x,y) koordinat degerleri uretip verir.
+# 9x9 luk alanda rastgele yön degerleri uretip verir.
 def createSeed(seedUzunlugu):
     createdSeed = []
     for i in range(seedUzunlugu):
@@ -99,10 +99,11 @@ def getDifferentPointsCountInTheField_Fitness(route):
     # Max fonksiyonu min fonksiyonuna cevirildi.
     return 1/count
 
-# Bitis noktasi ile hedef nokta arasindaki Manhattan Distance bilgisini verir.
+# Bitis noktasi ile hedef nokta arasindaki Euclid Distance bilgisini verir.
 def getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint):
     # Normalize edilmis sonuc doner.
-    return (abs(finalPoint[0] - endPoint[0]) + abs(finalPoint[1] - endPoint[1])) / 10
+    return math.sqrt(pow((finalPoint[0] - endPoint[0]),2) + pow((finalPoint[1] - endPoint[1]),2))/11.3
+    #return (abs(finalPoint[0] - endPoint[0]) + abs(finalPoint[1] - endPoint[1])) / 10
 
 # Verilen rotada olusturulan acilarin toplamini verir.
 def getTurningAnglesInRoute_Fitness(route):
