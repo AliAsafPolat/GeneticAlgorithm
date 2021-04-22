@@ -27,6 +27,9 @@ def unitVector(vector):
 
 # Verilen vektorler arasindaki aciyi verir.
 def getAngleBetweenVectors(v1, v2):
+    if((v1[0] == 0 and v1[1] == 0) or (v2[0] == 0 and v2[1] == 0) ):
+        return None
+    #print("V1 : ", v1, " ** V2 : ", v2)
     v1_u = unitVector(v1)
     v2_u = unitVector(v2)
     # Sonucun normalize edilmis halini dondurur.
@@ -86,6 +89,19 @@ def getDirectionToCoordinate(direction, currentPos):
     return point
 
             
+# Verilen baslangic noktasi ve yon bilgisine gore koordinatlari dondurur.
+def seedToCoordinate(directionSeed, startingPoint):
+    route = []
+    route.append(startingPoint)
+    point = startingPoint
+    for direction in directionSeed:
+        fPoint = getDirectionToCoordinate(direction,point)
+        if(isInTheField(fPoint,9,9,0,0)):
+            point = fPoint
+
+        route.append(point)
+    return route
+
 # Verilen noktanın istenilen alan icerisinde olup olmadigi bilgisini dondurur.
 def isInTheField(point, fieldWidth, fieldHeight, fieldStartingX, fieldStartingY):
     if(point[0] < fieldStartingX or point[0] >= fieldStartingX + fieldWidth or point[1] < fieldStartingY 
@@ -104,7 +120,7 @@ def getDifferentPointsCountInTheField_Fitness(route):
     count = 0
     marked = []
     for point in route:
-        if(marked.count(point)<1 and isInTheField(point,9,9,0,0)):
+        if(marked.count(point)<1):
             count += 1
             marked.append(point)
     # Max fonksiyonu min fonksiyonuna cevirildi.
@@ -122,14 +138,21 @@ def getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint):
 def getTurningAnglesInRoute_Fitness(route):
     angleRes = 0
     v0 = getVector(route[0][0],route[0][1],route[1][0],route[1][1])
-    
+    lenCount = 0
     for i in range(2,len(route)):
         v1 = getVector(route[i-1][0],route[i-1][1], route[i][0], route[i][1])
         angle_ = getAngleBetweenVectors(v0,v1)
+        if(angle_ is None):
+            angle_ = 0
+        else:
+            #print("len Count : ", lenCount)
+            lenCount += 1
+            v0 = v1
         #print("Turning Angle ", i , " : ", angle_)
         angleRes += angle_
-        v0 = v1
-    return angleRes / len(route)
+        
+    
+    return angleRes / (lenCount)
 
 # Fitness fonksiyonlari toplanarak genel fitness sonucu dondurulur.
 def getFitnessScore(route, finalPoint, endPoint):
@@ -161,12 +184,12 @@ def applyCrossOver(parentX, parentY):
         parentX[i] = parentY[i]
         parentY[i] = tmp[i]
     
-    return parentX
+    #return parentX
     
-    #if(crossPoint % 2 == 0):
-    #    return parentX
-    #else:
-    #    return parentY
+    if(crossPoint % 2 == 0):
+        return parentX
+    else:
+        return parentY
     
 # Populasyondaki kromozomlarin secim ihtimallerinin atamasini yapar.        
 def setPopulationProbablities(population):
@@ -180,7 +203,7 @@ def setPopulationProbablities(population):
 def randomSelection(population):
     probablities = []
     for i in range(len(population)):
-        probablities.append(population[i].prob) # fitness degeri az olanın ihtimali cok olmasi gerek.
+        probablities.append(1/population[i].fitness) # fitness degeri az olanın ihtimali cok olmasi gerek.
     
     selection = random.choices(population, probablities,k=1)
     # Secilen degerin hangi indisde bulundugu bilgisi dondurulur.
@@ -190,7 +213,7 @@ def randomSelection(population):
 
 def applyMutationProbablity(kromozom, mutationProbablity):
     
-    for i in range(len(kromozom)):
+    for i in range(1,len(kromozom)):
         prob = random.uniform(0.0, 1.0)
         #print(prob)
         if(prob < mutationProbablity):
@@ -200,8 +223,8 @@ def applyMutationProbablity(kromozom, mutationProbablity):
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
     
-    populationCount = 100
-    mutationProbablity = 0.1
+    populationCount = 1000
+    mutationProbablity = 0.08
     startingPoint = endPoint = (0,0)
     population = []
     routes = []
@@ -223,7 +246,7 @@ if __name__ == '__main__':
     setPopulationProbablities(fitnessVals)
     
     endCondition = True
-    
+    generationCount = 1
     while endCondition:
         newPopulation = []
         newFitnessVals = []
@@ -248,13 +271,16 @@ if __name__ == '__main__':
         routes = newRoutes
         fitnessVals = newFitnessVals
         fitnessVals.sort(key = takeFitnessScore)
+        
         print("Fitness val : ", fitnessVals[0].fitness)
             
         if(fitnessVals[0].fitness < 0.15):
             endCondition = False
             print("Final fitness : ", fitnessVals[0].fitness)
             print("Final path : ", population[fitnessVals[0].idx])
-        endCondition = False
+            print("Generation Count : ", generationCount)
+        generationCount += 1
+        #endCondition = False
     #print("Parent X : ", parentX_kromozom)
     #print("Parent Y : ", parentY_kromozom)
     #print("Child : ", child)
