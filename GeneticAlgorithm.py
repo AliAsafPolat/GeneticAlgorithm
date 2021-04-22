@@ -39,41 +39,50 @@ def getVector(x1, y1, x2, y2):
     return (dX, dY)
 
 # 9x9 luk alanda rastgele (x,y) koordinat degerleri uretip verir.
-def createSeed(seedUzunlugu):
+def createSeed(seedUzunlugu, startingPoint):
     createdSeed = []
+    pointArr = []
+    # Baslangic noktasini ekle.
+    pointArr.append(startingPoint)
+    prevPoint = startingPoint
     for i in range(seedUzunlugu):
-        direction = random.randint(1,8)
-        createdSeed.append(direction)
-    return createdSeed
-
-# Verilen baslangic noktasi ve yon bilgisine gore koordinatlari dondurur.
-def seedToCoordinate(directionSeed, startingPoint):
-    route = []
-    route.append(startingPoint)
-    point = startingPoint
-    for direction in directionSeed:
-        if(direction == 1):
-            point = (point[0], point[1] + 1)
-        elif(direction == 2):
-            point = (point[0] - 1, point[1] + 1)
-        elif(direction == 3):
-            point = (point[0] - 1, point[1])
-        elif(direction == 4):
-            point = (point[0] - 1, point[1] - 1)
-        elif(direction == 5):
-            point = (point[0], point[1] - 1)
-        elif(direction == 6):
-            point = (point[0] + 1, point[1] - 1)
-        elif(direction == 7):
-            point = (point[0] + 1, point[1])
-        elif(direction == 8):
-            point = (point[0] + 1, point[1] + 1)
-        else:
-            print("Unvalid direction")
-            break
+        validDirection = True
+        # 9x9 luk alan icerisinde yon bilgisi verene kadar rastgele yonler uret. Uygun yon geldiginde son koordinat bilgisini tut.
+        while(validDirection):
+            direction = random.randint(1,8)
+            targetPoint = getDirectionToCoordinate(direction, prevPoint)
+            if(isInTheField(targetPoint,9,9,0,0)):
+                validDirection = False
+                prevPoint = targetPoint
+                # Gezilen alanlari diziye ekle.
+                pointArr.append(targetPoint)
+                createdSeed.append(direction)
         
-        route.append(point)
-    return route
+    return createdSeed, pointArr
+
+
+def getDirectionToCoordinate(direction, currentPos):
+    if(direction == 1):
+        point = (currentPos[0], currentPos[1] + 1)
+    elif(direction == 2):
+        point = (currentPos[0] - 1, currentPos[1] + 1)
+    elif(direction == 3):
+        point = (currentPos[0] - 1, currentPos[1])
+    elif(direction == 4):
+        point = (currentPos[0] - 1, currentPos[1] - 1)
+    elif(direction == 5):
+        point = (currentPos[0], currentPos[1] - 1)
+    elif(direction == 6):
+        point = (currentPos[0] + 1, currentPos[1] - 1)
+    elif(direction == 7):
+        point = (currentPos[0] + 1, currentPos[1])
+    elif(direction == 8):
+        point = (currentPos[0] + 1, currentPos[1] + 1)
+    else:
+        print("Unvalid direction")
+        return None
+    return point
+
             
 # Verilen noktanın istenilen alan icerisinde olup olmadigi bilgisini dondurur.
 def isInTheField(point, fieldWidth, fieldHeight, fieldStartingX, fieldStartingY):
@@ -102,7 +111,7 @@ def getDifferentPointsCountInTheField_Fitness(route):
 # Bitis noktasi ile hedef nokta arasindaki Manhattan Distance bilgisini verir.
 def getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint):
     # Normalize edilmis sonuc doner.
-    return (abs(finalPoint[0] - endPoint[0]) + abs(finalPoint[1] - endPoint[1])) / 10
+    return (abs(finalPoint[0] - endPoint[0]) + abs(finalPoint[1] - endPoint[1])) / 100
 
 # Verilen rotada olusturulan acilarin toplamini verir.
 def getTurningAnglesInRoute_Fitness(route):
@@ -115,13 +124,18 @@ def getTurningAnglesInRoute_Fitness(route):
         #print("Turning Angle ", i , " : ", angle_)
         angleRes += angle_
         v0 = v1
-    return angleRes
+    return angleRes / len(route)
 
 # Fitness fonksiyonlari toplanarak genel fitness sonucu dondurulur.
 def getFitnessScore(route, finalPoint, endPoint):
     fitDiffPoint = getDifferentPointsCountInTheField_Fitness(route)
     fitFinalDist = getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint)
     fitTurningAng = getTurningAnglesInRoute_Fitness(route)
+    
+    #print("Diff p : ", fitDiffPoint)
+    #print("Final Dist : ", fitFinalDist)
+    #print("Turning and : ", fitTurningAng )
+    
     return fitDiffPoint + fitFinalDist+ fitTurningAng
 
 # Verilen class edemanin uygun degeri bilgisi geri dondurulur.
@@ -142,11 +156,12 @@ def applyCrossOver(parentX, parentY):
         parentX[i] = parentY[i]
         parentY[i] = tmp[i]
     
+    return parentX
     
-    if(crossPoint % 2 == 0):
-        return parentX
-    else:
-        return parentY
+    #if(crossPoint % 2 == 0):
+    #    return parentX
+    #else:
+    #    return parentY
     
 # Populasyondaki kromozomlarin secim ihtimallerinin atamasini yapar.        
 def setPopulationProbablities(population):
@@ -180,7 +195,7 @@ def applyMutationProbablity(kromozom, mutationProbablity):
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
     
-    populationCount = 1000
+    populationCount = 100
     mutationProbablity = 0.1
     startingPoint = endPoint = (0,0)
     population = []
@@ -189,8 +204,11 @@ if __name__ == '__main__':
     
     # Ilk populasyon olusturulur.
     for i in range(populationCount):
-        population.append(createSeed(80))
-        routes.append(seedToCoordinate(population[i], startingPoint))
+        pop,rout = createSeed(10, startingPoint)
+        #print("Directions : ", pop)
+        #print("Routes : ", rout)
+        population.append(pop)
+        routes.append(rout)
         fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], routes[i][-1], endPoint)))
     
     #print("Fitness : ", fitnessVals[0].fitness)
@@ -220,8 +238,6 @@ if __name__ == '__main__':
             newPopulation.append(child)
             newRoutes.append(seedToCoordinate(child, startingPoint))
             newFitnessVals.append( FitnessIdx(i, getFitnessScore(newRoutes[i], newRoutes[i][-1], endPoint)))
-    
-            
             
         population = newPopulation
         routes = newRoutes
@@ -229,11 +245,11 @@ if __name__ == '__main__':
         fitnessVals.sort(key = takeFitnessScore)
         print("Fitness val : ", fitnessVals[0].fitness)
             
-        if(fitnessVals[0].fitness < 1.5):
+        if(fitnessVals[0].fitness < 0.15):
             endCondition = False
             print("Final fitness : ", fitnessVals[0].fitness)
             print("Final path : ", population[fitnessVals[0].idx])
-        
+        endCondition = False
     #print("Parent X : ", parentX_kromozom)
     #print("Parent Y : ", parentY_kromozom)
     #print("Child : ", child)
