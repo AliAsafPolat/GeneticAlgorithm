@@ -211,20 +211,42 @@ def randomSelection(population):
     return selection[0].idx
 
 
-def applyMutationProbablity(kromozom, mutationProbablity):
+def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
+    pointArr=[]
     
+    prevPoint=startingPoint
     for i in range(1,len(kromozom)):
         prob = random.uniform(0.0, 1.0)
         #print(prob)
+        j=0
         if(prob < mutationProbablity):
-            kromozom[i] = random.randint(1,8)
-        
+            while(j<i):
+                targetPoint=getDirectionToCoordinate(kromozom[j],prevPoint)
+                prevPoint=targetPoint
+                j=j+1            
+            validDirection=False
+            while(validDirection):
+                kromozom[i] = random.randint(1,8)
+                targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
+                prevPoint=targetPoint
+                j=j+1
+                while(j<len(kromozom) and isInTheField(targetPoint,9,9,0,0)):
+                    targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
+                    prevPoint=targetPoint
+                    j=j+1
+                if(j>=len(kromozom)):
+                    validDirection=True
+                
+
+                   
+                    
+
 
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
     
     populationCount = 1000
-    mutationProbablity = 0.08
+    mutationProbablity = 0.1
     startingPoint = endPoint = (0,0)
     population = []
     routes = []
@@ -261,7 +283,7 @@ if __name__ == '__main__':
             # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
             child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
             # Mutasyon ihtimalini ekler.
-            applyMutationProbablity(child, mutationProbablity)        
+            applyMutationProbablity(child, mutationProbablity,(0,0))        
             
             newPopulation.append(child)
             newRoutes.append(seedToCoordinate(child, startingPoint))
@@ -274,7 +296,7 @@ if __name__ == '__main__':
         
         print("Fitness val : ", fitnessVals[0].fitness)
             
-        if(fitnessVals[0].fitness < 0.15):
+        if(fitnessVals[0].fitness < 0.17):
             endCondition = False
             print("Final fitness : ", fitnessVals[0].fitness)
             print("Final path : ", population[fitnessVals[0].idx])
