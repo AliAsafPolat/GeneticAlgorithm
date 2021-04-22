@@ -9,7 +9,7 @@ import math
 import numpy as np
 from numpy.random import choice
 from decimal import *
-
+import matplotlib.pyplot as plt
 
 class FitnessIdx:
     def __init__(self, idx, fitness):
@@ -98,7 +98,6 @@ def seedToCoordinate(directionSeed, startingPoint):
         fPoint = getDirectionToCoordinate(direction,point)
         if(isInTheField(fPoint,9,9,0,0)):
             point = fPoint
-
         route.append(point)
     return route
 
@@ -215,7 +214,7 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
     pointArr=[]
     
     prevPoint=startingPoint
-    for i in range(1,len(kromozom)):
+    for i in range(0,len(kromozom)):
         prob = random.uniform(0.0, 1.0)
         #print(prob)
         j=0
@@ -225,20 +224,38 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
                 prevPoint=targetPoint
                 j=j+1            
             validDirection=False
+            #Mutasyon sonucu nokta alanın içindemi kontrolü
             while(validDirection):
-                kromozom[i] = random.randint(1,8)
-                targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
-                prevPoint=targetPoint
-                j=j+1
-                while(j<len(kromozom) and isInTheField(targetPoint,9,9,0,0)):
+                direction= random.randint(1,8)
+                if(kromozom[i]!=direction):
+                    kromozom[i]=direction
                     targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
                     prevPoint=targetPoint
                     j=j+1
-                if(j>=len(kromozom)):
-                    validDirection=True
+                    while(j<len(kromozom) and isInTheField(targetPoint,9,9,0,0)):
+                        targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
+                        prevPoint=targetPoint
+                        j=j+1
+                    if(j>=len(kromozom)):
+                        validDirection=True
                 
+#Yolu çizdirme
+def displayRoute(path):
+    x=[]
+    y=[]
+    for point in path:
+        x.append(point[0])
+        y.append(point[1])   
+    x1 = np.array(x)
+    y1 = np.array(y)
+    print("x : ",x1)
+    print("y : ",y1)
+    plt.xlim([-1,8])
+    plt.ylim([-1,8])
+    plt.plot(x1, y1)
+    plt.show()
 
-                   
+
                     
 
 
@@ -293,15 +310,22 @@ if __name__ == '__main__':
         routes = newRoutes
         fitnessVals = newFitnessVals
         fitnessVals.sort(key = takeFitnessScore)
-        
         print("Fitness val : ", fitnessVals[0].fitness)
             
-        if(fitnessVals[0].fitness < 0.17):
+        if(fitnessVals[0].fitness < 0.18):
             endCondition = False
             print("Final fitness : ", fitnessVals[0].fitness)
             print("Final path : ", population[fitnessVals[0].idx])
             print("Generation Count : ", generationCount)
+            path=seedToCoordinate( population[fitnessVals[0].idx],startingPoint)
+            displayRoute(path)
+
         generationCount += 1
+    
+    
+    
+  
+
         #endCondition = False
     #print("Parent X : ", parentX_kromozom)
     #print("Parent Y : ", parentY_kromozom)
