@@ -210,9 +210,7 @@ def randomSelection(population):
     return selection[0].idx
 
 
-def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
-    pointArr=[]
-    
+def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):    
     prevPoint=startingPoint
     for i in range(0,len(kromozom)):
         prob = random.uniform(0.0, 1.0)
@@ -226,17 +224,18 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
             validDirection=False
             #Mutasyon sonucu nokta alanın içindemi kontrolü
             while(validDirection):
+                k=j
                 direction= random.randint(1,8)
                 if(kromozom[i]!=direction):
                     kromozom[i]=direction
                     targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
                     prevPoint=targetPoint
-                    j=j+1
-                    while(j<len(kromozom) and isInTheField(targetPoint,9,9,0,0)):
+                    k=k+1
+                    while(k<len(kromozom) and isInTheField(targetPoint,9,9,0,0)):
                         targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
                         prevPoint=targetPoint
-                        j=j+1
-                    if(j>=len(kromozom)):
+                        k=k+1
+                    if(k>=len(kromozom)):
                         validDirection=True
                 
 #Yolu çizdirme
