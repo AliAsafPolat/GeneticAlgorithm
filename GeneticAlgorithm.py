@@ -149,6 +149,8 @@ def getTurningAnglesInRoute_Fitness(route):
             v0 = v1
         #print("Turning Angle ", i , " : ", angle_)
         angleRes += angle_
+        #if(lenCount==0):
+            #print("route : " , route)
         
     
     return angleRes / (lenCount)
@@ -212,7 +214,7 @@ def randomSelection(population):
 
 def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):    
     prevPoint=startingPoint
-    for i in range(0,len(kromozom)):
+    for i in range(1,len(kromozom)):
         prob = random.uniform(0.0, 1.0)
         #print(prob)
         j=0
@@ -221,22 +223,35 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
                 targetPoint=getDirectionToCoordinate(kromozom[j],prevPoint)
                 prevPoint=targetPoint
                 j=j+1            
-            validDirection=False
+            validDirection=True
             #Mutasyon sonucu nokta alanın içindemi kontrolü
-            while(validDirection):
-                k=j
-                direction= random.randint(1,8)
-                if(kromozom[i]!=direction):
+            direction= (random.randint(1,8) % 8)
+            old_direction=kromozom[i]
+            count=0
+            while(validDirection and count<9):
+                k=j      
+                if(kromozom[i]!=direction and direction != 0 ):
                     kromozom[i]=direction
-                    targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
-                    prevPoint=targetPoint
+                    targetPoint1=getDirectionToCoordinate(kromozom[i],prevPoint)
+                    prevPoint1=targetPoint1
                     k=k+1
-                    while(k<len(kromozom) and isInTheField(targetPoint,9,9,0,0)):
-                        targetPoint=getDirectionToCoordinate(kromozom[i],prevPoint)
-                        prevPoint=targetPoint
+                    while(k<len(kromozom) and isInTheField(prevPoint1,9,9,0,0)):
+                        targetPoint1=getDirectionToCoordinate(kromozom[k],prevPoint1)
+                        prevPoint1=targetPoint1
                         k=k+1
                     if(k>=len(kromozom)):
-                        validDirection=True
+                        validDirection=False
+                    else:
+                        kromozom[i]=old_direction
+                        direction=(direction+1) % 9
+                else:
+                    direction=(direction+1) % 9
+
+                count=count+1
+                #if(count == 9 ):
+                #    print("mutasyon olmadı")
+                
+
                 
 #Yolu çizdirme
 def displayRoute(path):
