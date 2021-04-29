@@ -43,14 +43,16 @@ def getVector(x1, y1, x2, y2):
 
 
 # 9x9 luk alanda rastgele (x,y) koordinat degerleri uretip verir.
-def createSeed(seedUzunlugu, startingPoint):
-
+def createSeed(seedUzunlugu, startingPoint, droneCount):
+    breakPoint = math.ceil(seedUzunlugu/droneCount)
     createdSeed = []
     pointArr = []
+    pointArrTemp = []
     # Baslangic noktasini ekle.
-    pointArr.append(startingPoint)
+    pointArrTemp.append(startingPoint)
     prevPoint = startingPoint
     for i in range(seedUzunlugu):
+        # Alan disina cikmak yerine oldugu yerde kalmasi icin dongu degiskeni
         validDirection = True
         # 9x9 luk alan icerisinde yon bilgisi verene kadar rastgele yonler uret. Uygun yon geldiginde son koordinat bilgisini tut.
         while(validDirection):
@@ -60,8 +62,10 @@ def createSeed(seedUzunlugu, startingPoint):
                 validDirection = False
                 prevPoint = targetPoint
                 # Gezilen alanlari diziye ekle.
-                pointArr.append(targetPoint)
+                pointArrTemp.append(targetPoint)
                 createdSeed.append(direction)
+        if((i+1) % breakPoint == 0):
+            pointArr.append(pointArrTemp)
         
     return createdSeed, pointArr
 
@@ -90,15 +94,19 @@ def getDirectionToCoordinate(direction, currentPos):
 
             
 # Verilen baslangic noktasi ve yon bilgisine gore koordinatlari dondurur.
-def seedToCoordinate(directionSeed, startingPoint):
+def seedToCoordinate(directionSeed, startingPoint, droneCount):
     route = []
-    route.append(startingPoint)
-    point = startingPoint
-    for direction in directionSeed:
-        fPoint = getDirectionToCoordinate(direction,point)
-        if(isInTheField(fPoint,9,9,0,0)):
-            point = fPoint
-        route.append(point)
+    breakPoint = math.ceil(len(directionSeed)/droneCount)
+    for i in range(droneCount):
+        routeTemp = []
+        routeTemp.append(startingPoint)
+        point = startingPoint
+        for direction in range(breakPoint):
+            fPoint = getDirectionToCoordinate(directionSeed[direction],point)
+            if(isInTheField(fPoint,9,9,0,0)):
+                point = fPoint
+            routeTemp.append(point)
+        route.append(routeTemp)
     return route
 
 # Verilen noktanın istenilen alan icerisinde olup olmadigi bilgisini dondurur.
@@ -156,11 +164,17 @@ def getTurningAnglesInRoute_Fitness(route):
     return angleRes / (lenCount)
 
 # Fitness fonksiyonlari toplanarak genel fitness sonucu dondurulur.
-def getFitnessScore(route, finalPoint, endPoint):
-    fitDiffPoint = getDifferentPointsCountInTheField_Fitness(route)
-    fitFinalDist = getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint)
-    fitTurningAng = getTurningAnglesInRoute_Fitness(route)
+def getFitnessScore(route, endPoint, droneCount):
+    fitFinalDist = fitTurningAng = 0
+    for i in range(droneCount):
+        finalPoint = route[i][-1]
+        fitFinalDist += getFinalDistancesFromEndPoint_Fitness(finalPoint, endPoint)
+        fitTurningAng += getTurningAnglesInRoute_Fitness(route[i])
     
+    finalRoute = []
+    for j in range(droneCount):
+        finalRoute += route[j]
+    fitDiffPoint = getDifferentPointsCountInTheField_Fitness(finalRoute)
     #print("Diff p : ", fitDiffPoint)
     #print("Final Dist : ", fitFinalDist)
     #print("Turning and : ", fitTurningAng )
@@ -252,7 +266,6 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):
                 #    print("mutasyon olmadı")
                 
 
-                
 #Yolu çizdirme
 def displayRoute(path):
     x=[]
@@ -270,12 +283,9 @@ def displayRoute(path):
     plt.show()
 
 
-                    
-
-
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
-    
+    droneCount = 2
     populationCount = 1000
     mutationProbablity = 0.1
     startingPoint = endPoint = (0,0)
@@ -285,12 +295,12 @@ if __name__ == '__main__':
     
     # Ilk populasyon olusturulur.
     for i in range(populationCount):
-        pop,rout = createSeed(10, startingPoint)
+        pop,rout = createSeed(10, startingPoint, droneCount)
         #print("Directions : ", pop)
         #print("Routes : ", rout)
         population.append(pop)
         routes.append(rout)
-        fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], routes[i][-1], endPoint)))
+        fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], endPoint, droneCount)))
     
     #print("Fitness : ", fitnessVals[0].fitness)
     fitnessVals.sort(key=takeFitnessScore)
@@ -305,6 +315,7 @@ if __name__ == '__main__':
         newFitnessVals = []
         newRoutes = []
         for i in range(populationCount):
+            newRoutesTemp = []
             parentX_Idx = randomSelection(fitnessVals)
             parentY_Idx = randomSelection(fitnessVals)
             
@@ -317,8 +328,12 @@ if __name__ == '__main__':
             applyMutationProbablity(child, mutationProbablity,(0,0))        
             
             newPopulation.append(child)
-            newRoutes.append(seedToCoordinate(child, startingPoint))
-            newFitnessVals.append( FitnessIdx(i, getFitnessScore(newRoutes[i], newRoutes[i][-1], endPoint)))
+            rut = seedToCoordinate(child, startingPoint, droneCount)
+            for j in range(droneCount):
+                newRoutesTemp.append(rut[j])
+                
+            newRoutes.append(newRoutesTemp)
+            newFitnessVals.append( FitnessIdx(i, getFitnessScore(newRoutes[i], endPoint, droneCount)))
             
         population = newPopulation
         routes = newRoutes
@@ -331,15 +346,11 @@ if __name__ == '__main__':
             print("Final fitness : ", fitnessVals[0].fitness)
             print("Final path : ", population[fitnessVals[0].idx])
             print("Generation Count : ", generationCount)
-            path=seedToCoordinate( population[fitnessVals[0].idx],startingPoint)
-            displayRoute(path)
+            path=seedToCoordinate( population[fitnessVals[0].idx],startingPoint, droneCount)
+            displayRoute(path[0])
 
         generationCount += 1
     
-    
-    
-  
-
         #endCondition = False
     #print("Parent X : ", parentX_kromozom)
     #print("Parent Y : ", parentY_kromozom)
