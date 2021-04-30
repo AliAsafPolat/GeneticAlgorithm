@@ -45,6 +45,7 @@ def getVector(x1, y1, x2, y2):
 # 9x9 luk alanda rastgele (x,y) koordinat degerleri uretip verir.
 def createSeed(seedUzunlugu, startingPoint, droneCount):
     breakPoint = math.ceil(seedUzunlugu/droneCount)
+    #print(breakPoint)
     createdSeed = []
     pointArr = []
     pointArrTemp = []
@@ -65,7 +66,11 @@ def createSeed(seedUzunlugu, startingPoint, droneCount):
                 pointArrTemp.append(targetPoint)
                 createdSeed.append(direction)
         if((i+1) % breakPoint == 0):
-            pointArr.append(pointArrTemp)
+            pointArr.append(pointArrTemp.copy())
+            pointArrTemp = []
+            pointArrTemp.append(startingPoint)
+            prevPoint=startingPoint
+            
         
     return createdSeed, pointArr
 
@@ -159,8 +164,9 @@ def getTurningAnglesInRoute_Fitness(route):
         angleRes += angle_
         #if(lenCount==0):
             #print("route : " , route)
-        
-    
+    # Hep aynı deger geldiginde patliyor. Bu sinir durumlarinda olusuyor. Or: (0,1),(0,1),(0,1),(0,1),(0,1) burada aci yok. Sola gidis olmadigindan bu sekilde koordinat elde ediliyor.
+    if(lenCount == 0):
+        return 2 # buyuk bir deger girilip fitness ı kotulestiriyoruz.
     return angleRes / (lenCount)
 
 # Fitness fonksiyonlari toplanarak genel fitness sonucu dondurulur.
@@ -295,11 +301,13 @@ if __name__ == '__main__':
     
     # Ilk populasyon olusturulur.
     for i in range(populationCount):
+        #yon dizisinden olusan populasyon ve gidilen koordinatlar.
         pop,rout = createSeed(10, startingPoint, droneCount)
         #print("Directions : ", pop)
         #print("Routes : ", rout)
         population.append(pop)
         routes.append(rout)
+        #gidilen koordinatlar, hedef nokta ve drone sayisi gonderilerek fitness degeri alinir.
         fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], endPoint, droneCount)))
     
     #print("Fitness : ", fitnessVals[0].fitness)
