@@ -100,20 +100,44 @@ def getDirectionToCoordinate(direction, currentPos):
             
 # Verilen baslangic noktasi ve yon bilgisine gore koordinatlari dondurur.
 def seedToCoordinate(directionSeed, startingPoint, droneCount):
+    breakPoint = math.ceil(len(directionSeed)/droneCount)
+    #print(breakPoint)
+    pointArr = []
+    pointArrTemp = []
+    # Baslangic noktasini ekle.
+    pointArrTemp.append(startingPoint)
+    prevPoint = startingPoint
+    for i in range(len(directionSeed)):
+        targetPoint = getDirectionToCoordinate(directionSeed[i], prevPoint)
+        if(isInTheField(targetPoint,9,9,0,0)):
+            prevPoint = targetPoint
+            # Gezilen alanlari diziye ekle.
+        pointArrTemp.append(prevPoint)
+        if((i+1) % breakPoint == 0):
+            pointArr.append(pointArrTemp.copy())
+            pointArrTemp = []
+            pointArrTemp.append(startingPoint)
+            prevPoint=startingPoint
+            
+        
+    return pointArr
+    
+    
+"""
     route = []
     breakPoint = math.ceil(len(directionSeed)/droneCount)
-    for i in range(droneCount):
+    for i in range(len(directionSeed)):
         routeTemp = []
         routeTemp.append(startingPoint)
         point = startingPoint
-        for direction in range(breakPoint):
-            fPoint = getDirectionToCoordinate(directionSeed[direction],point)
-            if(isInTheField(fPoint,9,9,0,0)):
-                point = fPoint
-            routeTemp.append(point)
+        #for direction in range(breakPoint):
+        fPoint = getDirectionToCoordinate(directionSeed[direction],point)
+        if(isInTheField(fPoint,9,9,0,0)):
+            point = fPoint
+        routeTemp.append(point)
         route.append(routeTemp)
     return route
-
+"""
 # Verilen noktanın istenilen alan icerisinde olup olmadigi bilgisini dondurur.
 def isInTheField(point, fieldWidth, fieldHeight, fieldStartingX, fieldStartingY):
     if(point[0] < fieldStartingX or point[0] >= fieldStartingX + fieldWidth or point[1] < fieldStartingY 
@@ -211,13 +235,13 @@ def applyCrossOver(parentX, parentY):
         return parentX
     else:
         return parentY
-    
+""" 
 # Populasyondaki kromozomlarin secim ihtimallerinin atamasini yapar.        
 def setPopulationProbablities(population):
     totalProbablity = len(population) * len(population) / 2
     for i,krom in enumerate(population):
         krom.setProbablity((len(population) - i) / (totalProbablity))
-    
+"""
 
 # Verilen populasyon icerisinden secilme olasiliklarina gore rastgele secim yapar. 
 # Alinan parametrede class listesi vardır. Elemanlarin fitness degerleri bu parametre icerisinde bulunmaktadir.
@@ -231,7 +255,7 @@ def randomSelection(population):
     #print("Selected fitness : ", selection[0].fitness)
     return selection[0].idx
 
-
+# Mutasyon olasiligina gore mutasyon uygular.
 def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):    
     prevPoint=startingPoint
     for i in range(1,len(kromozom)):
@@ -292,6 +316,7 @@ def displayRoute(path):
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
     droneCount = 2
+    seedLength = 80
     populationCount = 1000
     mutationProbablity = 0.1
     startingPoint = endPoint = (0,0)
@@ -302,7 +327,7 @@ if __name__ == '__main__':
     # Ilk populasyon olusturulur.
     for i in range(populationCount):
         #yon dizisinden olusan populasyon ve gidilen koordinatlar.
-        pop,rout = createSeed(10, startingPoint, droneCount)
+        pop,rout = createSeed(seedLength, startingPoint, droneCount)
         #print("Directions : ", pop)
         #print("Routes : ", rout)
         population.append(pop)
@@ -313,8 +338,8 @@ if __name__ == '__main__':
     #print("Fitness : ", fitnessVals[0].fitness)
     fitnessVals.sort(key=takeFitnessScore)
             
-    # Yapilan siralamaya gore populasyondaki kromozomlarin secilme olasiliklarini atar.
-    setPopulationProbablities(fitnessVals)
+    # Yapilan siralamaya gore populasyondaki kromozomlarin secilme olasiliklarini atar. rulet teker olmayan yaklasim bu. suan kullanilmiyor.
+    # setPopulationProbablities(fitnessVals)
     
     endCondition = True
     generationCount = 1
@@ -333,7 +358,7 @@ if __name__ == '__main__':
             # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
             child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
             # Mutasyon ihtimalini ekler.
-            applyMutationProbablity(child, mutationProbablity,(0,0))        
+            #applyMutationProbablity(child, mutationProbablity,(0,0))        
             
             newPopulation.append(child)
             rut = seedToCoordinate(child, startingPoint, droneCount)
@@ -355,7 +380,8 @@ if __name__ == '__main__':
             print("Final path : ", population[fitnessVals[0].idx])
             print("Generation Count : ", generationCount)
             path=seedToCoordinate( population[fitnessVals[0].idx],startingPoint, droneCount)
-            displayRoute(path[0])
+            for k in range(droneCount):
+                displayRoute(path[k])
 
         generationCount += 1
     
