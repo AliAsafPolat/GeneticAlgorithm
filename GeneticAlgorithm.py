@@ -256,45 +256,47 @@ def randomSelection(population):
     return selection[0].idx
 
 # Mutasyon olasiligina gore mutasyon uygular.
-def applyMutationProbablity(kromozom, mutationProbablity,startingPoint):    
+def applyMutationProbablity(kromozom, mutationProbablity,startingPoint,droneCount):
+    routeLength=int(len(kromozom)/droneCount)    
     prevPoint=startingPoint
-    for i in range(1,len(kromozom)):
-        prob = random.uniform(0.0, 1.0)
-        #print(prob)
-        j=0
-        if(prob < mutationProbablity):
-            while(j<i):
-                targetPoint=getDirectionToCoordinate(kromozom[j],prevPoint)
-                prevPoint=targetPoint
-                j=j+1            
-            validDirection=True
-            #Mutasyon sonucu nokta alanın içindemi kontrolü
-            direction= (random.randint(1,8) % 8)
-            old_direction=kromozom[i]
-            count=0
-            while(validDirection and count<9):
-                k=j      
-                if(kromozom[i]!=direction and direction != 0 ):
-                    kromozom[i]=direction
-                    targetPoint1=getDirectionToCoordinate(kromozom[i],prevPoint)
-                    prevPoint1=targetPoint1
-                    k=k+1
-                    while(k<len(kromozom) and isInTheField(prevPoint1,9,9,0,0)):
-                        targetPoint1=getDirectionToCoordinate(kromozom[k],prevPoint1)
+    for k in range(droneCount):
+        for i in range(((k*routeLength)+1),((k+1)*routeLength)):
+            prob = random.uniform(0.0, 1.0)
+            #print(prob)
+            j=0
+            if(prob < mutationProbablity):
+                while(j<i):
+                    targetPoint=getDirectionToCoordinate(kromozom[j],prevPoint)
+                    prevPoint=targetPoint
+                    j=j+1            
+                validDirection=True
+                #Mutasyon sonucu nokta alanın içindemi kontrolü
+                direction= (random.randint(1,8) % 8)
+                old_direction=kromozom[i]
+                count=0
+                while(validDirection and count<9):
+                    k=j      
+                    if(kromozom[i]!=direction and direction != 0 ):
+                        kromozom[i]=direction
+                        targetPoint1=getDirectionToCoordinate(kromozom[i],prevPoint)
                         prevPoint1=targetPoint1
                         k=k+1
-                    if(k>=len(kromozom)):
-                        validDirection=False
+                        while(k<len(kromozom) and isInTheField(prevPoint1,9,9,0,0)):
+                            targetPoint1=getDirectionToCoordinate(kromozom[k],prevPoint1)
+                            prevPoint1=targetPoint1
+                            k=k+1
+                        if(k>=len(kromozom)):
+                            validDirection=False
+                        else:
+                            kromozom[i]=old_direction
+                            direction=(direction+1) % 9
                     else:
-                        kromozom[i]=old_direction
                         direction=(direction+1) % 9
-                else:
-                    direction=(direction+1) % 9
 
-                count=count+1
-                #if(count == 9 ):
-                #    print("mutasyon olmadı")
-                
+                    count=count+1
+                    #if(count == 9 ):
+                    #    print("mutasyon olmadı")
+
 
 #Yolu çizdirme
 def displayRoute(path):
@@ -358,7 +360,7 @@ if __name__ == '__main__':
             # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
             child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
             # Mutasyon ihtimalini ekler.
-            #applyMutationProbablity(child, mutationProbablity,(0,0))        
+            applyMutationProbablity(child, mutationProbablity,startingPoint,droneCount)        
             
             newPopulation.append(child)
             rut = seedToCoordinate(child, startingPoint, droneCount)
