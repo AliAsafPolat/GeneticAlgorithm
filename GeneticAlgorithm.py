@@ -260,7 +260,7 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint,droneCoun
     routeLength=int(len(kromozom)/droneCount)    
     prevPoint=startingPoint
     for k in range(droneCount):
-        for i in range(((k*routeLength)+1),((k+1)*routeLength)):
+        for i in range(((k*routeLength)),((k+1)*routeLength)):
             prob = random.uniform(0.0, 1.0)
             #print(prob)
             j=0
@@ -299,7 +299,7 @@ def applyMutationProbablity(kromozom, mutationProbablity,startingPoint,droneCoun
 
 
 #Yolu çizdirme
-def displayRoute(path):
+def displayRoute(path,droneNumber):
     x=[]
     y=[]
     for point in path:
@@ -307,26 +307,36 @@ def displayRoute(path):
         y.append(point[1])   
     x1 = np.array(x)
     y1 = np.array(y)
-    print("x : ",x1)
-    print("y : ",y1)
-    plt.xlim([-1,8])
-    plt.ylim([-1,8])
-    plt.plot(x1, y1)
-    plt.show()
+    print(str(droneNumber+1 ) + " .x : ",x1)
+    print(str(droneNumber+1 ) + " .y : ",y1)
+    plt.xlim([-1,9])
+    plt.ylim([-1,9])
+    plt.plot(x1, y1,label=str(droneNumber+1)+".Drone")
 
 
 if __name__ == '__main__':
     #droneCount = input("Enter Drone Count : ")
-    droneCount = 2
+    droneCount = 4
     seedLength = 80
-    populationCount = 1000
+    populationCount = 100
     mutationProbablity = 0.1
     startingPoint = endPoint = (0,0)
     population = []
+    #mutationProbablityList=[]
+    #fitnessValByMutationProbablity=[]
+    populationCountList=[]
+    fitnessValByPopulationCount=[]
     routes = []
     fitnessVals = []
-    
-    # Ilk populasyon olusturulur.
+    #for populationCount in range(50,550,50):
+    #    populationCountList.append(populationCount)
+    ##for mutationProbablity1 in range(1,11,1):
+    ##    mutationProbablity=mutationProbablity1/10
+    ##    mutationProbablityList.append(mutationProbablity)
+    #    # Ilk populasyon olusturulur.
+    #    population = []
+    #    routes = []
+    #    fitnessVals = []
     for i in range(populationCount):
         #yon dizisinden olusan populasyon ve gidilen koordinatlar.
         pop,rout = createSeed(seedLength, startingPoint, droneCount)
@@ -336,13 +346,10 @@ if __name__ == '__main__':
         routes.append(rout)
         #gidilen koordinatlar, hedef nokta ve drone sayisi gonderilerek fitness degeri alinir.
         fitnessVals.append( FitnessIdx(i, getFitnessScore(routes[i], endPoint, droneCount)))
-    
     #print("Fitness : ", fitnessVals[0].fitness)
     fitnessVals.sort(key=takeFitnessScore)
-            
     # Yapilan siralamaya gore populasyondaki kromozomlarin secilme olasiliklarini atar. rulet teker olmayan yaklasim bu. suan kullanilmiyor.
     # setPopulationProbablities(fitnessVals)
-    
     endCondition = True
     generationCount = 1
     while endCondition:
@@ -353,44 +360,51 @@ if __name__ == '__main__':
             newRoutesTemp = []
             parentX_Idx = randomSelection(fitnessVals)
             parentY_Idx = randomSelection(fitnessVals)
-            
             parentX_kromozom = population[parentX_Idx]
             parentY_kromozom = population[parentY_Idx]
-            
             # Fonksiyon icinde dizideki degerler degistiginden kopyasini gonderiyorum.
             child = applyCrossOver(parentX_kromozom.copy(), parentY_kromozom.copy())
             # Mutasyon ihtimalini ekler.
             applyMutationProbablity(child, mutationProbablity,startingPoint,droneCount)        
-            
             newPopulation.append(child)
             rut = seedToCoordinate(child, startingPoint, droneCount)
             for j in range(droneCount):
                 newRoutesTemp.append(rut[j])
-                
             newRoutes.append(newRoutesTemp)
             newFitnessVals.append( FitnessIdx(i, getFitnessScore(newRoutes[i], endPoint, droneCount)))
-            
         population = newPopulation
         routes = newRoutes
         fitnessVals = newFitnessVals
         fitnessVals.sort(key = takeFitnessScore)
-        print("Fitness val : ", fitnessVals[0].fitness)
-            
-        if(fitnessVals[0].fitness < 0.18):
+        #print("Fitness val : ", fitnessVals[0].fitness)
+        if(generationCount == 100):
             endCondition = False
             print("Final fitness : ", fitnessVals[0].fitness)
-            print("Final path : ", population[fitnessVals[0].idx])
+            #"""print("Final path : ", population[fitnessVals[0].idx])"""
             print("Generation Count : ", generationCount)
             path=seedToCoordinate( population[fitnessVals[0].idx],startingPoint, droneCount)
             for k in range(droneCount):
-                displayRoute(path[k])
-
+                displayRoute(path[k],k)
+            plt.legend()
+            plt.show()
+            #print("1")
+            #fitnessValByMutationProbablity.append(fitnessVals[0].fitness)
+            #fitnessValByPopulationCount.append(fitnessVals[0].fitness)
         generationCount += 1
     
         #endCondition = False
     #print("Parent X : ", parentX_kromozom)
     #print("Parent Y : ", parentY_kromozom)
     #print("Child : ", child)
-    
-    
+#plt.xlabel("Popülasyon Sayısı")
+#plt.ylabel("Seçien Fitness")
+#plt.title("Popülasyon Büyüklüğüne göre Fitness")
+#plt.plot(np.array(populationCountList), np.array(fitnessValByPopulationCount))
+#plt.show()
+#print(fitnessValByMutationProbablity)
+#plt.xlabel("Mutasyon Olasılığı ")
+#plt.ylabel("Seçilen Fitness Değeri")
+#plt.title("Mutasyon Olasılığına göre Fitness")
+#plt.plot(np.array(mutationProbablityList), np.array(fitnessValByMutationProbablity))
+#plt.show()
     
